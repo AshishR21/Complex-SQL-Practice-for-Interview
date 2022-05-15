@@ -19,17 +19,14 @@ insert into customer_orders values
 (9,600,cast('2022-01-03' as date),3000) ;
 
 
-select * from customer_orders ;
-
+/* Solution - 1*/
 /* 
-my logic here -
+Logic -
 1. ordered the table by customer id and order date in ascending order and then took previous order date. as there is no previous date
 	before 2022-01-01 so, I have put it as first visit date. 
 2. If order_date = first_visit_date considered it as 1 else 0 and them sum those to get no of first_visit customer group by order_date.
 3. If order_date > first_visit_date considered it as 1 else 0 and them sum those to get no of repeated_visit customer group by order_date.
 */
-
-/* Solution */
 
 with t1 as
 	(select *,coalesce(lag(order_date) over (partition by customer_id order by order_date),order_date) as first_vist_date
@@ -43,11 +40,18 @@ group by order_date
 order by order_date asc;
 
 
+/* Solution - 2*/
+/* 
+Logic -
+1. Calculated the visits by CustomerID, sorted by ASC Order date
+2. All Visits = 1 against each date is considered as first visit, and rest visits are considered as Repeated.
+*/
 
-
-
-
-
-
-
-
+;WITH CTE AS 
+	(SELECT *, COUNT(CUSTOMER_ID) OVER(PARTITION BY CUSTOMER_ID ORDER BY ORDER_DATE) VISITS FROM CUSTOMER_ORDERS)
+SELECT ORDER_DATE
+		, SUM(CASE WHEN VISITS = 1 THEN 1 ELSE 0 END) FIRST_VIST
+		, SUM(CASE WHEN VISITS <> 1  THEN 1 ELSE 0 END) REPEATED_VIST
+FROM CTE
+GROUP BY ORDER_DATE
+ORDER BY 1
